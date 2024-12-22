@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title | default('Personal Finance Dashboard') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="/" id="navbarHome">
+            <img src="{{url_for('static',filename='fintrack_logo.jpg')}}" alt="FinTrack AI" style="height: auto;max-width: 75px;">
+          </a>
+
+          <!-- Dropdown Menu -->
+          <div class="dropdown">
+            <button class="btn btn-link dropdown-toggle" type="button" id="navbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              </button>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <li> <a class="dropdown-item" href="/">Home</a></li>
+              <li> <a class="dropdown-item" href="/download_transactions">Get Report</a></li>
+              <li><a class="dropdown-item" href="/update_goal">Update Savings Goal</a> </li>
+              <li><a class="dropdown-item" href="/transactions">Transactions</a></li>
+              <li><a class="dropdown-item" href="/support">Support</a></li>
+              <li><a class="dropdown-item" href="/logout">Logout</a></li>
+            </ul>
+          </div>
+
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <h2 style="font-family: 'Arial', sans-serif; text-align: center; font-size: 2.5em; color: #333;">
+            Welcome, 
+            <span style="color: #007bff; font-weight: bold;">
+              {{username}}
+            </span>
+          </h2>
+                   
+
+          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav ms-auto">
+              {% if current_user.is_authenticated %}
+                <a class="nav-link" href="/download_transactions" style="-webkit-text-fill-color: darkorchid;"><b>Get Report</b></a>
+                <a class="nav-link" href="/update_goal" style="-webkit-text-fill-color: darkgreen;"><b>Set Savings Goal</b></a>&nbsp;&nbsp;&nbsp;
+                <a class="nav-link" href="/transactions" style="-webkit-text-fill-color: blue"><b>Transactions</b></a>&nbsp;&nbsp;&nbsp;
+                <a class="nav-link" href="/logout" style="-webkit-text-fill-color: red;"><strong>Logout</strong></a>
+              {% else %}
+                <a class="nav-link" href="/login">Login</a>
+                <a class="nav-link" href="/register">Register</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </nav>
+    
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

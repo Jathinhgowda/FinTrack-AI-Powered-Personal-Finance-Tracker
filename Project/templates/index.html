@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    
+
+    <br><br>
+
+    <!-- AI Insights Label and Scrolling Marquee for Budget Advice -->
+    <div class="row align-items-center">
+        <!-- AI Insights Label on the Left -->
+        <div class="col-md-3">
+            <h4 style="-webkit-text-fill-color: red;">AI Insights</h4> <!-- Label for AI Insights -->
+        </div>
+        <!-- Scrolling Marquee on the Right -->
+        <div class="col-md-9">
+            <div class="marquee-container" style="background-color: white">
+                <div class="marquee">
+                    <span style="-webkit-text-fill-color: crimson;">
+                        {% for advice in budget_advice %}
+                            {{ advice }}{% if not loop.last %} | {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <br>
+    
+    <div class="alert alert-info">
+        {{ prediction_message }}
+    </div>
+
+    <!-- 3 Cards in Row for Current Balance, Total Income, Total Expense -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card" style="background-color: cornflowerblue;">
+                <h5 class="card-title">Total Income</h5>
+                <p class="card-text">₹{{ total_income }}</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="background-color: chartreuse;">
+                <h5 class="card-title">Current Balance</h5>
+                <p class="card-text">₹{{ balance }}</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="background-color:crimson;">
+                <h5 class="card-title">Total Expense</h5>
+                <p class="card-text">₹{{ total_expense }}</p>
+            </div>
+        </div>
+    </div>
+
+    <br><br>
+
+    <!-- Charts and Monthly Spending Analysis Section -->
+    <div class="row">
+        <!-- Expenses Bar Chart -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3>Expenses by Category</h3>
+                <canvas id="expenseChart"></canvas>
+                <p id="expenseChartError" style="display: none;">No data available for Expenses.</p>
+            </div>
+        </div>
+
+        <!-- Monthly Spending Categories -->
+        <div class="col-md-6">
+            <div class="monthly-analysis-container">
+                <h3>Monthly Spending Analysis</h3>
+                <div id="spendingCategories">
+                    <!-- Monthly spending categories will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <br><br>
+
+    <!-- Savings Goal Progress -->
+    <div class="savings-progress">
+        <h3>Savings Goal Progress</h3>
+        <p>{{ savings_status }}</p> <!-- This is where the dynamic savings status will appear -->
+        <div class="progress-container">
+            <div class="progress-bar-achieved" id="achieved-progress">0%</div>
+            <div class="progress-bar-remaining" id="remaining-progress"></div>
+        </div>
+    </div>
+
+    
+    <!-- Manage Transactions Button -->
+    <div class="text-center">
+        <a href="{{ url_for('transactions') }}" class="btn btn-primary mt-4">Manage Transactions</a>
+    </div>
+
+    <!-- Scripts for Charts -->
+    <script>
+        // Bar Chart: Expenses by Category
+        const expenseLabels = JSON.parse('{{ chart_labels | tojson | safe }}');
+        const expenseValues = JSON.parse('{{ chart_values | tojson | safe }}');
+
+        if (expenseLabels.length > 0 && expenseValues.length > 0) {
+            const ctxExpenses = document.getElementById('expenseChart').getContext('2d');
+            new Chart(ctxExpenses, {
+                type: 'bar',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        label: 'Expenses by Category',
+                        data: expenseValues,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                        borderWidth: 1,
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        } else {
+            document.getElementById('expenseChart').style.display = 'none';
+            document.getElementById('expenseChartError').style.display = 'block';
+        }
+
+        // Display Monthly Spending Categories (from month_analysis)
+        const monthAnalysisData = JSON.parse('{{ month_analysis | tojson | safe }}');
+        const spendingCategoriesContainer = document.getElementById('spendingCategories');
+
+        if (Object.keys(monthAnalysisData).length > 0) {
+            Object.entries(monthAnalysisData).forEach(([month, data]) => {
+                const monthElement = document.createElement('div');
+                monthElement.classList.add('month-item');
+
+                monthElement.innerHTML = `
+                    <h4>${month}</h4>
+                    <h5><strong>Income: </strong> ₹${data.income.toFixed(2)} </h5><br>&nbsp;
+                    <h5><strong>Expense: </strong> ₹${data.expense.toFixed(2)} </h5><br>&nbsp;
+                    <h5><strong>Savings: </strong> ₹${data.savings.toFixed(2)} </h5><br>
+                `;
+
+                spendingCategoriesContainer.appendChild(monthElement);
+            });
+        } else {
+            spendingCategoriesContainer.innerHTML = '<p>No monthly analysis data available.</p>';
+        }
+
+        window.onload = function() {
+            // Fetch the savings status (achieved goal percentage) from the <p> tag
+            const savingsStatusElement = document.querySelector('.savings-progress p');
+    
+            // Extract the percentage from the savings status (assuming the value is a number followed by a '%' sign)
+            let achievedGoal = parseInt(savingsStatusElement.innerText.replace('%', '').trim());
+
+            // If the achieved goal is not a valid number, set a default value (e.g., 0)
+            if (isNaN(achievedGoal)) {
+                achievedGoal = 0;
+            }
+
+            // Get the progress elements
+            const achievedBar = document.getElementById('achieved-progress');
+            const remainingBar = document.getElementById('remaining-progress');
+
+            // Trigger the animation by first setting the width to 0% and then to the desired value
+            achievedBar.style.transition = 'none'; // Disable transition initially to avoid an instant jump
+            achievedBar.style.width = '0%'; // Start from 0%
+
+            // Allow time for the initial state (optional, you can adjust this timing)
+            setTimeout(() => {
+                achievedBar.style.transition = 'width 2s ease-in-out'; // Enable the transition
+                achievedBar.style.width = achievedGoal + '%'; // Animate to the target value
+        
+                // Update the remaining bar width (inverse of achieved value)
+                remainingBar.style.width = (100 - achievedGoal) + '%';
+        
+                // Optionally update the text on the achieved progress bar
+                achievedBar.innerText = achievedGoal + '%';
+            }, 100);
+        };
+    </script>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<center>
+<div class="update_goal_form">
+    <form method="post" action="{{ url_for('update_goal') }}">
+        <h3>Current Savings Goal: {{savings_goal}}</h3><br><br>
+        <input type="number" name="savings_goal" id="savings_goal" placeholder="New Savings Goal" required>
+        <button type="submit">Update Goal</button>
+    </form>
+    </div>
+</center>
+
+{% endblock %}
